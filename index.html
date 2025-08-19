@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain Dump ✨</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #8b5cf6;
+            --secondary: #ec4899;
+            --accent: #06b6d4;
+            --dark: #0f0f1a;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1c1c3a 50%, #0a0a1f 100%);
+            color: #E2E8F0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            overflow-x: hidden;
+        }
+
+        .gradient-text {
+            background: linear-gradient(90deg, var(--secondary), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .note-card {
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            background-color: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.125);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            transform: rotate(var(--rotate-deg, 0deg));
+            z-index: 10;
+            cursor: pointer;
+        }
+
+        .note-card:hover {
+            transform: translateY(-5px) scale(1.05) rotate(var(--rotate-deg, 0deg));
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.4);
+            z-index: 20;
+        }
+
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+
+            0%,
+            100% {
+                transform: translateY(0) scale(1);
+            }
+
+            50% {
+                transform: translateY(-10px) scale(1.02);
+            }
+        }
+
+        .search-container,
+        .note-content-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 50;
+            border-radius: 2rem;
+            overflow-y: auto;
+        }
+
+        .search-container.active,
+        .note-content-container.active {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 40;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="text-center mb-12">
+        <h1 class="text-7xl md:text-8xl font-black text-white mb-2 leading-tight">
+            Brain Dump <span class="gradient-text">Vibes</span>
+            <span class="text-5xl floating">🧠✨</span>
+        </h1>
+        <p class="text-xl text-slate-400 max-w-2xl mx-auto">Your thoughts, but make it aesthetic. 🎨</p>
+    </header>
+
+    <main id="note-grid" class="flex flex-wrap items-center justify-center gap-8 md:gap-12"></main>
+
+    <div id="search-palette" class="search-container rounded-3xl p-4 bg-slate-800/80 shadow-2xl w-11/12 max-w-md">
+        <div class="relative">
+            <input type="text" id="note-search"
+                class="w-full bg-transparent text-white text-lg py-4 px-6 pr-12 focus:outline-none placeholder-slate-400"
+                placeholder="Search for ideas...">
+            <span class="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 text-lg"><i
+                    class="fas fa-search"></i></span>
+        </div>
+        <div id="search-results" class="mt-4 max-h-64 overflow-y-auto space-y-2"></div>
+    </div>
+
+    <div id="note-content-view"
+        class="note-content-container bg-slate-800/90 shadow-2xl w-11/12 max-w-4xl p-6 space-y-4 h-[80vh]">
+        <div class="flex justify-end">
+            <button id="close-note" class="text-slate-400 hover:text-white transition-colors text-2xl"><i
+                    class="fas fa-times"></i></button>
+        </div>
+        <div id="note-content-body"></div>
+    </div>
+
+    <div id="overlay" class="overlay"></div>
+
+
+    <script>
+        const notesData = {
+            'grammar': {
+                icon: '📝',
+                title: 'Grammar Essentials',
+                content: `<div class="space-y-4 text-slate-300">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col">
+      <div class="text-2xl mb-2">📝</div>
+      <h3 class="text-green-300 font-semibold">Phrase</h3>
+      <p>Something without a subject + verb.</p>
+    </div>
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col">
+      <div class="text-2xl mb-2">📜</div>
+      <h3 class="text-green-300 font-semibold">Clause</h3>
+      <p>Has subject + verb. Independent clause = complete. Dependent clause = incomplete.</p>
+    </div>
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col">
+      <div class="text-2xl mb-2">🎯</div>
+      <h3 class="text-green-300 font-semibold">Object</h3>
+      <p>Direct: she kicked the ball → ball. Indirect: she gave me a gift → me.</p>
+    </div>
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col">
+      <div class="text-2xl mb-2">⚡</div>
+      <h3 class="text-green-300 font-semibold">Predicate</h3>
+      <p>Contains a verb, tells something about the subject.</p>
+    </div>
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col">
+      <div class="text-2xl mb-2">💪</div>
+      <h3 class="text-green-300 font-semibold">Verb</h3>
+      <p>Action word. Transitive: needs object. Intransitive: no object needed. finite verb: is like we are agreegin for verb happening in some tense on a subject non finite: dont need any tense, or agreeement,
+</p>
+    </div>
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col col-span-1 md:col-span-2 lg:col-span-3">
+      <div class="text-2xl mb-2">🔄</div>
+      <h3 class="text-green-300 font-semibold">Tense Types</h3>
+      <table class="w-full border-collapse text-slate-200 mt-2">
+        <thead class="text-left border-b border-slate-500">
+          <tr>
+            <th class="p-2">Type</th>
+            <th class="p-2">Focus</th>
+            <th class="p-2">Example</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="p-2">Continuous</td>
+            <td class="p-2">Ongoing action</td>
+            <td class="p-2">I am reading</td>
+          </tr>
+          <tr>
+            <td class="p-2">Perfect</td>
+            <td class="p-2">Completed action</td>
+            <td class="p-2">I have read</td>
+          </tr>
+          <tr>
+            <td class="p-2">Perfect Continuous</td>
+            <td class="p-2">Ongoing + duration</td>
+            <td class="p-2">I have been reading for 2 hours</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col col-span-1 md:col-span-2 lg:col-span-3">
+      <div class="text-2xl mb-2">🐱</div>
+      <h3 class="text-green-300 font-semibold">SVO Example</h3>
+      <p>The cat chased the mouse under the table. Subject = cat, Verb = chased, Object = mouse.</p>
+    </div>
+  </div>
+</div>`,
+
+                tags: ['grammar', 'basics', 'english'],
+                color: 'from-blue-600 to-cyan-500',
+                rotate: '-3'
+            },
+            'ma-is-scared': {
+                icon: '😱',
+                title: 'Ma Is Scared',
+                content: `<div class="space-y-4 text-slate-300">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    
+    <!-- Ma is Scared -->
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col">
+      <div class="text-2xl mb-2">😨</div>
+      <h3 class="text-blue-300 font-semibold">Character Analysis</h3>
+      <ul class="list-disc list-inside ml-4">
+        <li>Ma is terrified of rats, showing vulnerabilities and fears.</li>
+        <li>Told from daughter's perspective, highlighting family dynamics.</li>
+      </ul>
+    </div>
+    
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col">
+      <div class="text-2xl mb-2">🎭</div>
+      <h3 class="text-purple-300 font-semibold">Theme & Symbolism</h3>
+      <ul class="list-disc list-inside ml-4">
+        <li>Fear & Anxiety</li>
+        <li>Trauma & Vulnerability</li>
+        <li>Family & Observation</li>
+      </ul>
+      <p class="mt-2"><strong>Symbolism:</strong> Rat = deeper fear/powerlessness, Kitchen = domestic pressure, Fear itself = stronger than reality.</p>
+    </div>
+    
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col">
+      <div class="text-2xl mb-2">🏠</div>
+      <h3 class="text-orange-300 font-semibold">Sociocultural Context</h3>
+      <ul class="list-disc list-inside ml-4">
+        <li>Domestic pressure: managing household stress</li>
+        <li>Gender roles: women’s invisible emotional burdens</li>
+        <li>Family dynamics: children perceive adult fears</li>
+      </ul>
+    </div>
+    
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col col-span-1 md:col-span-2 lg:col-span-3">
+      <div class="text-2xl mb-2">👁️</div>
+      <h3 class="text-green-300 font-semibold">Narrative & Perspective</h3>
+      <p>Daughter observes Ma, lower-middle-class family, father works outside, mother manages home.</p>
+    </div>
+   `,
+                tags: ['literature', 'analysis', 'short story'],
+                color: 'from-pink-600 to-purple-500',
+                rotate: '2'
+            },
+            'perumal-murugan': {
+                icon: '✍️',
+                title: 'Perumal Murugan',
+                content: `
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col gap-5">
+      <div class="text-2xl mb-5">🖋️</div>
+      <h3 class="text-purple-300 font-semibold">Themes</h3>
+      <ul class="list-disc list-inside ml-4">
+        <li>Wasted Talent</li>
+        <li>Art vs Society</li>
+        <li>Rural Innocence</li>
+      </ul>
+    </div>
+    
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col">
+      <div class="text-2xl mb-5">🔖</div>
+      <h3 class="text-orange-300 font-semibold">Symbolism</h3>
+      <ul class="list-disc list-inside ml-4">
+        <li>Chinnadurai = unrealized potential</li>
+        <li>Failed English paper = arbitrary systems crushing dreams</li>
+        <li>TASMAC job = loss of talent</li>
+      </ul>
+    </div>
+    
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col col-span-1 md:col-span-2 lg:col-span-3">
+      <div class="text-2xl mb-5">📖</div>
+      <h3 class="text-green-300 font-semibold">Story & Context</h3>
+      <p>Murugan joins a rural college, revives Literary Forum, student Chinnadurai shines in folk music contest, but systemic failure ruins potential.</p>
+    </div>
+    
+  </div>
+</div>`,
+                tags: ['literature', 'author', 'tragedy'],
+                color: 'from-orange-600 to-red-500',
+                rotate: '-4'
+            },
+            'missisipi-goddamn': {
+                icon: '✊',
+                title: 'Mississippi Goddamn',
+                content: `<div class="space-y-4 text-slate-300">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col">
+      <div class="text-2xl mb-2">⚖️</div>
+      <h3 class="text-purple-300 font-semibold">Themes</h3>
+      <ul class="list-disc list-inside ml-4">
+        <li>Racial Injustice & Oppression</li>
+        <li>Urgency for Reform</li>
+        <li>Personal & Collective Struggle</li>
+      </ul>
+    </div>
+
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col col-span-1 md:col-span-2 lg:col-span-3">
+      <div class="text-2xl mb-2">🗝️</div>
+      <h3 class="text-orange-300 font-semibold">Symbolism</h3>
+      <ul class="list-disc list-inside ml-4">
+        <li>Mississippi & Alabama = racism & violence</li>
+        <li>Hound dogs (police) = oppression</li>
+        <li>Black cat = fear, threat to life</li>
+        <li>"Go slow" = systemic delay & excuses</li>
+      </ul>
+    </div>
+
+  </div>
+</div>`,
+
+                tags: ['music', 'civil rights', 'protest'],
+                color: 'from-purple-600 to-pink-500',
+                rotate: '3'
+            },
+            'young-gifted-black': {
+                icon: '👑',
+                title: 'To Be Young, Gifted and Black',
+                content: `<div class="space-y-4 text-slate-300">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col">
+      <div class="text-2xl mb-2">🖤</div>
+      <h3 class="text-purple-300 font-semibold">Themes</h3>
+      <ul class="list-disc list-inside ml-4">
+        <li>Black Pride & Identity</li>
+        <li>Empowerment & Hope</li>
+        <li>Collective Responsibility</li>
+      </ul>
+    </div>
+
+    <div class="bg-slate-700/30 p-4 rounded-xl border border-slate-600/30 flex flex-col">
+      <div class="text-2xl mb-2">✨</div>
+      <h3 class="text-orange-300 font-semibold">Symbolism</h3>
+      <ul class="list-disc list-inside ml-4">
+        <li>"Young, Gifted and Black" = mantra of talent, pride & potential</li>
+        <li>"Soul Intact" = stay authentic & unbroken</li>
+        <li>Looking back on youth = bridges past struggles & present empowerment</li>
+      </ul>
+    </div>
+
+  </div>
+</div>`,
+
+                tags: ['music', 'empowerment', 'civil rights'],
+                color: 'from-green-600 to-blue-500',
+                rotate: '1'
+            }
+        };
+
+        const noteGrid = document.getElementById('note-grid');
+        const searchPalette = document.getElementById('search-palette');
+        const searchInput = document.getElementById('note-search');
+        const searchResults = document.getElementById('search-results');
+        const overlay = document.getElementById('overlay');
+        const noteContentView = document.getElementById('note-content-view');
+        const noteContentBody = document.getElementById('note-content-body');
+        const closeNoteBtn = document.getElementById('close-note');
+
+        function generateNoteCards() {
+            noteGrid.innerHTML = '';
+            Object.entries(notesData).forEach(([id, data]) => {
+                const card = document.createElement('div');
+                card.id = id;
+                card.className = 'note-card w-64 h-64 p-6 rounded-3xl flex flex-col items-center justify-center cursor-pointer transition-all duration-300 hover:z-20';
+                card.style.transform = `rotate(${data.rotate}deg)`;
+                card.style.background = `linear-gradient(135deg, rgba(30,41,59,0.5), rgba(30,41,59,0.5)), linear-gradient(135deg, #ec4899, #8b5cf6)`;
+                const emoji = document.createElement('div'); emoji.className = 'text-5xl mb-4'; emoji.innerHTML = data.icon;
+                const title = document.createElement('h3'); title.className = 'text-2xl font-bold text-white text-center mb-2'; title.textContent = data.title;
+                const tagLine = document.createElement('p'); tagLine.className = 'text-sm text-slate-400 text-center'; tagLine.textContent = data.tags.join(', ');
+                card.append(emoji, title, tagLine);
+                card.addEventListener('click', () => showNoteContent(data.title, data.content));
+                noteGrid.appendChild(card);
+            });
+        }
+
+        function showNoteContent(title, content) {
+            noteContentBody.innerHTML = `<h2 class="text-4xl font-extrabold gradient-text mb-6">${title}</h2>${content}`;
+            noteContentView.classList.add('active');
+            overlay.classList.add('active');
+        }
+
+        closeNoteBtn.addEventListener('click', () => { noteContentView.classList.remove('active'); overlay.classList.remove('active'); });
+        overlay.addEventListener('click', () => { noteContentView.classList.remove('active'); overlay.classList.remove('active'); });
+
+        generateNoteCards();
+    </script>
+</body>
+
+</html>
